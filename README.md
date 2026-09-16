@@ -1,0 +1,2 @@
+# demo-gyakuten-onboarding
+逆転コーチング入会者のオンボーディングを管理するアプリのデモUI
