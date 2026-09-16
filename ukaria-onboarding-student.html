@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ウカリア｜オンボーディング（生徒画面プロトタイプ）</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: {
+    uk:      '#2E7DA1',   // ウカリアのメインブルー
+    ukdark:  '#1F5A76',
+    uksoft:  '#E8F2F7',
+    ukbg:    '#F4F6F8',
+    line:    '#E3E8ED',
+    ink:     '#1B2733',
+    muted:   '#6B7A88',
+    cta:     '#F3A12C',   // 完了ボタン
+    done:    '#2E9E6B',
+    alert:   '#D9534F',
+  },
+  fontFamily: { jp: ['"Hiragino Kaku Gothic ProN"','"Yu Gothic"','"Noto Sans JP"','sans-serif'] },
+}}};
+</script>
+<style>
+  body { -webkit-font-smoothing: antialiased; }
+  .scroll-thin::-webkit-scrollbar { width: 6px; }
+  .scroll-thin::-webkit-scrollbar-thumb { background: #CBD5DD; border-radius: 3px; }
+  @keyframes pop { from{transform:scale(.9);opacity:0} to{transform:scale(1);opacity:1} }
+  .pop { animation: pop .25s ease-out both; }
+  @keyframes slideDown { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+  .slide { animation: slideDown .2s ease-out both; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline:2px solid #F3A12C; outline-offset:2px; }
+  #confetti { position:fixed; inset:0; pointer-events:none; z-index:80; }
+</style>
+</head>
+<body class="font-jp bg-ukbg text-ink">
+
+<div class="flex min-h-screen">
+
+<!-- ============================================================
+     サイドバー（ウカリア既存のナビゲーション）
+============================================================ -->
+<aside class="hidden md:flex md:flex-col w-[230px] shrink-0 bg-white border-r border-line">
+  <div class="px-5 py-4 flex items-center gap-2">
+    <div class="w-8 h-8 rounded-full bg-uk text-white flex items-center justify-center text-sm font-bold">ウ</div>
+    <span class="text-[19px] font-bold text-uk">ウカリア</span>
+  </div>
+
+  <nav class="flex-1 overflow-y-auto scroll-thin px-3 pb-4 text-[13px]">
+    <p class="px-2 pt-3 pb-1 text-[11px] text-muted">トップ</p>
+    <a class="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:bg-ukbg">🏠 ホーム</a>
+    <a class="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:bg-ukbg">🔔 お知らせ</a>
+    <a class="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:bg-ukbg">📝 日報</a>
+
+    <p class="px-2 pt-4 pb-1 text-[11px] text-muted">はじめての方へ</p>
+    <!-- ★今回追加するメニュー -->
+    <a class="flex items-center justify-between px-3 py-2 rounded-lg bg-uksoft text-uk font-bold">
+      <span class="flex items-center gap-2">🚩 オンボーディング</span>
+      <span id="nav-badge" class="bg-cta text-white text-[10px] px-1.5 py-0.5 rounded-full">6</span>
+    </a>
+    <a id="nav-tools" class="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:bg-ukbg cursor-pointer">
+      📚 サービス・ツールについて
+    </a>
+
+    <p class="px-2 pt-4 pb-1 text-[11px] text-muted">学習</p>
+    <a class="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:bg-ukbg">📖 参考書</a>
+    <a class="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:bg-ukbg">📊 テスト分析</a>
+    <a class="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:bg-ukbg">🦉 ウカリアAI</a>
+    <a class="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:bg-ukbg">🗂 フラッシュカード</a>
+  </nav>
+
+  <div class="border-t border-line px-4 py-3">
+    <p class="text-[13px] font-bold">形部 深優</p>
+    <p class="text-[11px] text-muted mt-0.5">Version: 16.0.3</p>
+  </div>
+</aside>
+
+<!-- ============================================================
+     メイン
+============================================================ -->
+<main class="flex-1 min-w-0">
+
+  <!-- パンくず -->
+  <div class="px-5 md:px-8 pt-5 text-[12px] text-muted">
+    ホーム <span class="mx-1">›</span> <span id="crumb" class="text-ink">オンボーディング</span>
+  </div>
+
+  <!-- ============ オンボーディング画面 ============ -->
+  <div id="view-onboarding" class="px-5 md:px-8 py-4 max-w-4xl">
+
+    <div class="flex flex-wrap items-center gap-3">
+      <h1 class="text-[20px] font-bold">おかえりなさい、形部 深優 さん</h1>
+      <span class="text-[11px] bg-white border border-line rounded px-2 py-1 text-muted">今日 2026-08-21</span>
+      <span class="text-[11px] bg-uksoft text-uk rounded px-2 py-1 font-bold">入塾日 2026-08-18</span>
+    </div>
+
+    <!-- ---------- 進捗パネル ---------- -->
+    <section class="mt-4 bg-white rounded-xl border border-line p-5">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-[12px] text-muted">入会後のお手続き</p>
+          <h2 id="progress-heading" class="mt-1 text-[22px] font-bold leading-snug"></h2>
+        </div>
+        <div class="text-right shrink-0">
+          <p id="percent-big" class="text-[34px] font-bold leading-none text-uk">0<span class="text-[16px]">%</span></p>
+          <p class="text-[11px] text-muted mt-1">完了</p>
+        </div>
+      </div>
+
+      <div class="mt-4 h-2.5 w-full rounded-full bg-ukbg overflow-hidden"
+           role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="track">
+        <div id="bar" class="h-full rounded-full bg-uk transition-all duration-500 ease-out" style="width:0%"></div>
+      </div>
+
+      <div class="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-[12px]">
+        <span class="text-muted"><b id="done-count" class="text-ink">0/6</b> タスク完了</span>
+        <span id="remain-time" class="text-muted"></span>
+      </div>
+
+      <div id="next-hint" class="mt-4 rounded-lg bg-uksoft px-3 py-2.5 text-[13px]"></div>
+    </section>
+
+    <!-- ---------- 外部ツールのアカウント情報 ---------- -->
+    <section class="mt-5 bg-white rounded-xl border border-line overflow-hidden">
+      <button id="acct-toggle" class="w-full flex items-center justify-between px-5 py-4 text-left">
+        <span>
+          <span class="text-[15px] font-bold">🔑 あなたのアカウント情報</span>
+          <span class="ml-2 text-[11px] text-muted">各ツールのIDとパスワード（いつでも見返せます）</span>
+        </span>
+        <span id="acct-chevron" class="text-muted text-[12px]">▼</span>
+      </button>
+      <div id="acct-body" class="px-5 pb-5">
+        <div class="rounded-lg bg-[#FFF8EC] border border-[#F5DFB5] px-3 py-2 text-[12px] text-[#8A5A00] mb-3">
+          パスワードは他人に共有しないでください。忘れた場合は事務局へご連絡ください。
+        </div>
+        <div id="account-list" class="grid gap-3 sm:grid-cols-2"></div>
+      </div>
+    </section>
+
+    <!-- ---------- タスク（STEPごと） ---------- -->
+    <div id="phase-list" class="mt-6 space-y-6"></div>
+
+    <!-- ---------- 質問箱 ---------- -->
+    <section class="mt-6 bg-white rounded-xl border border-line p-5">
+      <h3 class="text-[15px] font-bold">💬 質問箱</h3>
+      <p class="mt-1 text-[12px] text-muted">
+        わからないことがあれば送ってください。事務局が確認し、ウカリアの通知と登録メールに回答が届きます。
+      </p>
+      <textarea id="question-input" rows="3" placeholder="例）ラクモンにログインできません。IDは合っているはずなのですが…"
+                class="mt-3 w-full rounded-lg border border-line px-3 py-2 text-[13px] leading-relaxed focus:border-uk outline-none"></textarea>
+      <div class="mt-2 flex items-center justify-between">
+        <span id="question-note" class="text-[11px] text-muted">返信の目安：平日 10:00–21:00</span>
+        <button id="question-send" class="h-10 px-5 rounded-lg bg-uk text-white text-[13px] font-bold hover:opacity-90">送信する</button>
+      </div>
+
+      <div id="question-log" class="mt-4 space-y-2"></div>
+    </section>
+  </div>
+
+  <!-- ============ サービス・ツールについて（完了後の見返し用） ============ -->
+  <div id="view-tools" class="hidden px-5 md:px-8 py-4 max-w-4xl">
+    <h1 class="text-[20px] font-bold">サービス・ツールについて</h1>
+    <p class="mt-1 text-[12px] text-muted">オンボーディングで確認した内容は、いつでもここから見返せます。</p>
+
+    <section class="mt-4 bg-white rounded-xl border border-line p-5">
+      <h3 class="text-[15px] font-bold">🔑 アカウント情報</h3>
+      <div id="account-list-2" class="mt-3 grid gap-3 sm:grid-cols-2"></div>
+    </section>
+
+    <section class="mt-4 bg-white rounded-xl border border-line p-5">
+      <h3 class="text-[15px] font-bold">📚 マニュアル・解説動画</h3>
+      <div id="archive-list" class="mt-3 space-y-2"></div>
+    </section>
+
+    <button id="back-to-onb" class="mt-5 h-10 px-4 rounded-lg border border-line bg-white text-[13px] font-bold text-uk">
+      ← オンボーディング画面に戻る
+    </button>
+  </div>
+</main>
+</div>
+
+<!-- 紙吹雪 -->
+<canvas id="confetti" class="hidden"></canvas>
+
+<!-- 100%達成モーダル -->
+<div id="celebrate" class="hidden fixed inset-0 z-[90] bg-black/40 flex items-center justify-center px-4">
+  <div class="bg-white rounded-2xl max-w-sm w-full p-7 text-center pop">
+    <p class="text-[44px] leading-none">🎉</p>
+    <h2 class="mt-3 text-[19px] font-bold">オンボーディング完了！</h2>
+    <p class="mt-2 text-[13px] text-muted leading-relaxed">
+      お疲れさまでした。これで学習を始める準備が整いました。<br>
+      次回から通常のホーム画面が表示されます。
+    </p>
+    <div class="mt-5 rounded-lg bg-uksoft px-3 py-2.5 text-[12px] text-left">
+      確認した資料や動画は「サービス・ツールについて」からいつでも見返せます。
+    </div>
+    <button id="celebrate-close" class="mt-5 w-full h-12 rounded-xl bg-uk text-white font-bold text-[14px]">
+      ホームへ進む
+    </button>
+  </div>
+</div>
+
+<!-- トースト -->
+<div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[95] px-4 py-2.5 rounded-lg bg-ink text-white text-[13px] font-bold"></div>
+
+
+<script>
+/* ============================================================
+   0. 生徒データ（本番はウカリアのセッションから取得）
+============================================================ */
+const STUDENT = {
+  studentId: 'e4116d12-3114-4b0f-ab0d-5b20870354e9',
+  name: '形部 深優',
+  grade: '高3',
+  course: '難関私大コース',
+  enrolledAt: '2026-08-18',   // ★この日を基準に各タスクの期限を算出する
+};
+const TODAY = new Date('2026-08-21');
+
+/* ============================================================
+   1. 外部ツールのアカウント情報
+      （ウカリアDBに格納し、管理者画面から登録・編集する）
+============================================================ */
+const ACCOUNTS = [
+  { tool:'ラクモン',      loginId:'rakumon_8842',   password:'Gk7#pQz2',  url:'https://rakumon.example.com', note:'質問用アプリ' },
+  { tool:'塾生サイト',    loginId:'ST-A7K92',       password:'haru0514',  url:'https://members.example.com', note:'教材ダウンロード' },
+  { tool:'模試ポータル',  loginId:'m-fukabu',       password:'Ms#2026kk', url:'https://moshi.example.com',   note:'模試の申込・成績閲覧' },
+];
+
+/* ============================================================
+   2. フェーズ（STEP）とタスク
+      ・phase … 表示グループ
+      ・dueDays … 入塾日から何日後が期限か（動的に算出）
+      ・type … normal / form_week / form_photo
+============================================================ */
+const PHASES = [
+  { id:'P1', no:1, title:'ようこそ！まずは準備を始めましょう', lead:'まずは1分で終わるものから。上のアカウント情報もあわせて確認してください。' },
+  { id:'P2', no:2, title:'ツールのセットアップと使い方',       lead:'短い動画で使い方を確認します。分厚い資料は読まなくて大丈夫です。' },
+  { id:'P3', no:3, title:'学習のスタート！',                   lead:'ここまで来たらあと少し。初回の学習に向けた準備です。' },
+];
+
+let TASKS = [
+  { taskId:'TSK_week',   phase:'P1', order:1, dueDays:3,  minutes:2,
+    title:'受講開始希望週を教えてください', type:'form_week',
+    body:'いつから授業を始めたいかを選んでください。担当コーチの枠を確保します。',
+    hint:'あとから変更できます', video:'', manual:'', completed:false },
+
+  { taskId:'TSK_photo',  phase:'P1', order:2, dueDays:3,  minutes:3,
+    title:'プロフィール用の顔写真をアップロード', type:'form_photo',
+    body:'コーチが顔と名前を一致させるために使います。スマホで撮ったものでかまいません。',
+    hint:'背景は問いません', video:'', manual:'', completed:false },
+
+  { taskId:'TSK_app',    phase:'P2', order:3, dueDays:5,  minutes:5,
+    title:'学習アプリのインストールと初期設定', type:'normal',
+    body:'ラクモンをインストールし、上のアカウント情報でログインします。',
+    hint:'通知はオンにしておくと課題の締切を逃しません',
+    video:'ラクモンの初期設定（0:45）', manual:'ラクモン設定マニュアル.pdf', completed:false },
+
+  { taskId:'TSK_rules',  phase:'P2', order:4, dueDays:7,  minutes:3,
+    title:'塾のルールの確認と同意', type:'normal',
+    body:'欠席連絡の方法、質問チャットの使い方、成績データの取り扱いを確認します。',
+    hint:'全4ページ・読むだけ',
+    video:'', manual:'受講規約_2026年度.pdf', completed:false },
+
+  { taskId:'TSK_test',   phase:'P3', order:5, dueDays:10, minutes:60,
+    title:'入塾テストの受験', type:'normal',
+    body:'現時点の学力を測ります。結果で学習プランの出発点が決まります。',
+    hint:'静かな場所で60分まとめて',
+    video:'受験の流れ（0:30）', manual:'', completed:false },
+
+  { taskId:'TSK_orient', phase:'P3', order:6, dueDays:10, minutes:5,
+    title:'初回オリエンテーションの申し込み', type:'normal',
+    body:'担当コーチとの30分の面談枠を予約します。ここで学習プランが確定します。',
+    hint:'今週中の枠がおすすめ',
+    video:'', manual:'', completed:false },
+];
+
+/* 質問箱のログ（本番はDBから取得） */
+let QUESTIONS = [
+  { at:'2026-08-19 20:14', body:'ラクモンのパスワードがわかりません。', answer:'アカウント情報の欄に記載しています。ご確認ください。', answeredAt:'2026-08-19 21:02' },
+];
+
+let formAnswers = { week:'', photo:'' };
+
+
+/* ============================================================
+   3. 期限の算出（入塾日 + dueDays）
+============================================================ */
+function dueDate(task) {
+  const d = new Date(STUDENT.enrolledAt);
+  d.setDate(d.getDate() + task.dueDays);
+  return d;
+}
+function fmtDate(d) {
+  return (d.getMonth()+1) + '月' + d.getDate() + '日';
+}
+function dueState(task) {
+  const diff = Math.ceil((dueDate(task) - TODAY) / 86400000);
+  if (task.completed) return { label:'完了', cls:'text-done', urgent:false };
+  if (diff < 0)  return { label:fmtDate(dueDate(task))+'まで（超過）', cls:'text-alert font-bold', urgent:true };
+  if (diff <= 1) return { label:fmtDate(dueDate(task))+'まで（あと'+Math.max(diff,0)+'日）', cls:'text-alert font-bold', urgent:true };
+  return { label:fmtDate(dueDate(task))+'まで', cls:'text-muted', urgent:false };
+}
+
+
+/* ============================================================
+   4. 描画
+============================================================ */
+function render() {
+  const total = TASKS.length;
+  const done  = TASKS.filter(t => t.completed).length;
+  const pct   = Math.round(done / total * 100);
+  const allDone = done === total;
+  const remain = TASKS.filter(t => !t.completed).reduce((s,t) => s + t.minutes, 0);
+  const next   = TASKS.find(t => !t.completed) || null;
+
+  /* 進捗パネル */
+  document.getElementById('bar').style.width = pct + '%';
+  document.getElementById('track').setAttribute('aria-valuenow', pct);
+  document.getElementById('bar').className =
+    'h-full rounded-full transition-all duration-500 ease-out ' + (allDone ? 'bg-done' : 'bg-uk');
+  document.getElementById('percent-big').innerHTML = pct + '<span class="text-[16px]">%</span>';
+  document.getElementById('percent-big').className =
+    'text-[34px] font-bold leading-none ' + (allDone ? 'text-done' : 'text-uk');
+  document.getElementById('progress-heading').innerHTML = allDone
+    ? 'すべて完了しました 🎉'
+    : '完了まで、あと<span class="text-cta">' + (100 - pct) + '</span>%';
+  document.getElementById('done-count').textContent = done + '/' + total;
+  document.getElementById('remain-time').textContent = allDone ? '所要時間 0分' : '残り約 ' + remain + '分';
+
+  const hint = document.getElementById('next-hint');
+  if (next) {
+    const ds = dueState(next);
+    hint.classList.remove('hidden');
+    hint.innerHTML = 'つぎは <b>' + esc(next.title) + '</b>' +
+      '<span class="ml-2 text-[12px] ' + ds.cls + '">' + ds.label + '</span>';
+  } else {
+    hint.classList.add('hidden');
+  }
+
+  /* サイドバーのバッジ */
+  const badge = document.getElementById('nav-badge');
+  if (allDone) badge.classList.add('hidden');
+  else { badge.classList.remove('hidden'); badge.textContent = total - done; }
+
+  /* アカウント情報 */
+  const acctHtml = ACCOUNTS.map((a, i) => `
+    <div class="rounded-lg border border-line p-3">
+      <div class="flex items-center justify-between">
+        <p class="text-[13px] font-bold">${esc(a.tool)}</p>
+        <a href="${esc(a.url)}" target="_blank" rel="noreferrer" class="text-[11px] text-uk underline">開く ↗</a>
+      </div>
+      <p class="mt-0.5 text-[11px] text-muted">${esc(a.note)}</p>
+      <dl class="mt-2 space-y-1.5 text-[12px]">
+        <div class="flex items-center gap-2">
+          <dt class="w-12 text-muted shrink-0">ID</dt>
+          <dd class="font-mono truncate flex-1">${esc(a.loginId)}</dd>
+          <button data-copy="${esc(a.loginId)}" class="copy-btn text-[11px] text-uk border border-line rounded px-1.5 py-0.5">コピー</button>
+        </div>
+        <div class="flex items-center gap-2">
+          <dt class="w-12 text-muted shrink-0">PASS</dt>
+          <dd class="font-mono truncate flex-1" data-pw="${i}">••••••••</dd>
+          <button data-eye="${i}" class="eye-btn text-[11px] text-uk border border-line rounded px-1.5 py-0.5">表示</button>
+          <button data-copy="${esc(a.password)}" class="copy-btn text-[11px] text-uk border border-line rounded px-1.5 py-0.5">コピー</button>
+        </div>
+      </dl>
+    </div>`).join('');
+  document.getElementById('account-list').innerHTML = acctHtml;
+  document.getElementById('account-list-2').innerHTML = acctHtml;
+
+  /* フェーズごとのタスク */
+  document.getElementById('phase-list').innerHTML = PHASES.map(p => {
+    const items = TASKS.filter(t => t.phase === p.id).sort((a,b) => a.order - b.order);
+    const pDone = items.filter(t => t.completed).length;
+    const pAll  = pDone === items.length;
+
+    return `
+    <section>
+      <div class="flex items-center gap-3 mb-2">
+        <span class="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0
+                     ${pAll ? 'bg-done text-white' : 'bg-white border-2 border-uk text-uk'}">
+          ${pAll ? '✓' : 'S'+p.no}
+        </span>
+        <div class="min-w-0">
+          <h3 class="text-[15px] font-bold leading-tight">STEP${p.no}　${esc(p.title)}</h3>
+          <p class="text-[11.5px] text-muted mt-0.5">${esc(p.lead)}</p>
+        </div>
+        <span class="ml-auto text-[11px] text-muted shrink-0">${pDone}/${items.length}</span>
+      </div>
+      <ul class="space-y-2.5 md:pl-12">${items.map(taskCard).join('')}</ul>
+    </section>`;
+  }).join('');
+
+  bindTaskEvents();
+
+  /* 見返し用アーカイブ */
+  document.getElementById('archive-list').innerHTML = TASKS
+    .filter(t => t.video || t.manual)
+    .map(t => `
+      <div class="rounded-lg border border-line p-3">
+        <p class="text-[13px] font-bold">${esc(t.title)}</p>
+        <div class="mt-1.5 flex flex-wrap gap-2 text-[11px]">
+          ${t.video  ? `<span class="bg-uksoft text-uk rounded px-2 py-0.5">▶ ${esc(t.video)}</span>` : ''}
+          ${t.manual ? `<span class="bg-ukbg text-muted rounded px-2 py-0.5">📄 ${esc(t.manual)}</span>` : ''}
+        </div>
+      </div>`).join('') || '<p class="text-[12px] text-muted">まだありません</p>';
+
+  /* 質問ログ */
+  document.getElementById('question-log').innerHTML = QUESTIONS.map(q => `
+    <div class="rounded-lg border border-line p-3">
+      <p class="text-[11px] text-muted">${esc(q.at)}　あなたの質問</p>
+      <p class="mt-1 text-[13px]">${esc(q.body)}</p>
+      ${q.answer ? `
+        <div class="mt-2 rounded-lg bg-uksoft px-3 py-2">
+          <p class="text-[11px] text-uk font-bold">事務局からの回答（${esc(q.answeredAt)}）</p>
+          <p class="mt-1 text-[13px]">${esc(q.answer)}</p>
+        </div>`
+        : `<p class="mt-2 text-[11px] text-cta font-bold">回答をお待ちください</p>`}
+    </div>`).join('');
+}
+
+/* --- タスクカード1件分 --- */
+function taskCard(t) {
+  const ds = dueState(t);
+
+  /* 埋め込みコンテンツ */
+  let extra = '';
+  if (t.video) {
+    extra += `
+      <div class="mt-3 rounded-lg overflow-hidden bg-[#12181D] relative" style="aspect-ratio:16/9;max-width:420px;">
+        <button data-play="${t.taskId}" class="play-btn absolute inset-0 flex flex-col items-center justify-center text-white">
+          <span class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-[18px]">▶</span>
+          <span class="mt-2 text-[11px] opacity-80">${esc(t.video)}　この画面内で再生します</span>
+        </button>
+      </div>`;
+  }
+  if (t.manual) {
+    extra += `
+      <a href="#" class="mt-3 inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-[12px] hover:bg-ukbg">
+        📄 <span class="font-bold">${esc(t.manual)}</span><span class="text-muted">を開く</span>
+      </a>`;
+  }
+
+  /* 内部フォーム（ウカリア内で完結） */
+  if (t.type === 'form_week') {
+    extra += `
+      <div class="mt-3 rounded-lg bg-ukbg p-3">
+        <p class="text-[12px] font-bold">受講開始希望週</p>
+        <div class="mt-2 grid gap-1.5 sm:grid-cols-2">
+          ${['8/25の週','9/1の週','9/8の週','9/15以降'].map(w => `
+            <label class="flex items-center gap-2 bg-white rounded-lg border border-line px-3 py-2 text-[12.5px] cursor-pointer">
+              <input type="radio" name="week" value="${w}" ${formAnswers.week===w?'checked':''} class="week-radio">
+              ${w}
+            </label>`).join('')}
+        </div>
+        <p class="mt-2 text-[11px] text-muted">送信するとウカリアの生徒データに保存され、Google Chatへ通知されます。</p>
+      </div>`;
+  }
+  if (t.type === 'form_photo') {
+    extra += `
+      <div class="mt-3 rounded-lg bg-ukbg p-3">
+        <p class="text-[12px] font-bold">顔写真のアップロード</p>
+        <div class="mt-2 flex items-center gap-3">
+          <div id="photo-preview" class="w-16 h-16 rounded-full bg-white border border-line flex items-center justify-center text-[20px] text-muted">
+            ${formAnswers.photo ? '🙂' : '＋'}
+          </div>
+          <button data-photo class="h-10 px-4 rounded-lg border border-uk text-uk text-[12px] font-bold bg-white">
+            ${formAnswers.photo ? '選び直す' : '写真を選ぶ'}
+          </button>
+          <span class="text-[11px] text-muted">${formAnswers.photo ? esc(formAnswers.photo) : 'JPG / PNG・5MBまで'}</span>
+        </div>
+      </div>`;
+  }
+
+  return `
+  <li class="rounded-xl border ${t.completed ? 'border-line bg-[#F7FBF9]' : ds.urgent ? 'border-alert bg-white' : 'border-line bg-white'} p-4">
+    <div class="flex items-start gap-3">
+      <span class="mt-0.5 w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[12px] font-bold
+                   ${t.completed ? 'bg-done text-white' : 'bg-ukbg text-muted border border-line'}">
+        ${t.completed ? '✓' : t.order}
+      </span>
+      <div class="min-w-0 flex-1">
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <h4 class="text-[14.5px] font-bold ${t.completed ? 'text-muted line-through' : ''}">${esc(t.title)}</h4>
+          <span class="text-[11px] ${ds.cls}">${ds.label}</span>
+        </div>
+        <p class="mt-1 text-[12.5px] text-muted leading-relaxed">${esc(t.body)}</p>
+        <div class="mt-1.5 flex flex-wrap items-center gap-2 text-[11px]">
+          <span class="bg-ukbg rounded px-2 py-0.5 font-mono">目安 ${t.minutes}分</span>
+          ${t.hint ? `<span class="text-uk">💡 ${esc(t.hint)}</span>` : ''}
+        </div>
+        ${extra}
+        <button data-done="${t.taskId}"
+                class="done-btn mt-3 h-11 px-6 rounded-lg text-[13.5px] font-bold
+                       ${t.completed ? 'bg-white border border-line text-muted' : 'bg-cta text-white hover:opacity-90'}">
+          ${t.completed ? '完了を取り消す' : '完了する'}
+        </button>
+      </div>
+    </div>
+  </li>`;
+}
+
+
+/* ============================================================
+   5. 操作
+============================================================ */
+function bindTaskEvents() {
+  /* 完了 / 取り消し */
+  document.querySelectorAll('.done-btn').forEach(b => b.addEventListener('click', () => {
+    const t = TASKS.find(x => x.taskId === b.dataset.done);
+
+    /* フォーム系タスクは入力を必須にする */
+    if (!t.completed && t.type === 'form_week' && !formAnswers.week) {
+      return showToast('受講開始希望週を選んでください');
+    }
+    if (!t.completed && t.type === 'form_photo' && !formAnswers.photo) {
+      return showToast('顔写真を選んでください');
+    }
+
+    t.completed = !t.completed;
+    // 本番: POST /api/onboarding/event { taskId, event: completed|uncompleted }
+    render();
+
+    if (TASKS.every(x => x.completed)) celebrate();
+    else if (t.completed) showToast('完了しました');
+  }));
+
+  /* 動画の再生（本番はYouTubeのiframeを差し込む） */
+  document.querySelectorAll('.play-btn').forEach(b => b.addEventListener('click', () => {
+    b.parentElement.innerHTML =
+      '<div class="absolute inset-0 flex items-center justify-center text-white text-[12px]">▶ 再生中（本番はYouTube埋め込み）</div>';
+  }));
+
+  /* 受講希望週 */
+  document.querySelectorAll('.week-radio').forEach(r => r.addEventListener('change', () => {
+    formAnswers.week = r.value;
+    showToast('「' + r.value + '」を選択しました');
+  }));
+
+  /* 顔写真 */
+  const photoBtn = document.querySelector('[data-photo]');
+  if (photoBtn) photoBtn.addEventListener('click', () => {
+    formAnswers.photo = 'IMG_2481.jpg';   // 本番はファイル選択ダイアログ
+    render();
+    showToast('写真を選択しました');
+  });
+
+  /* コピー */
+  document.querySelectorAll('.copy-btn').forEach(b => b.addEventListener('click', () => {
+    navigator.clipboard.writeText(b.dataset.copy)
+      .then(() => showToast('コピーしました')).catch(() => showToast('コピーできませんでした'));
+  }));
+
+  /* パスワードの表示切替 */
+  document.querySelectorAll('.eye-btn').forEach(b => b.addEventListener('click', () => {
+    const i = Number(b.dataset.eye);
+    document.querySelectorAll(`[data-pw="${i}"]`).forEach(el => {
+      const shown = el.textContent !== '••••••••';
+      el.textContent = shown ? '••••••••' : ACCOUNTS[i].password;
+    });
+    b.textContent = b.textContent === '表示' ? '隠す' : '表示';
+  }));
+}
+
+/* アカウント情報の開閉 */
+document.getElementById('acct-toggle').addEventListener('click', () => {
+  const body = document.getElementById('acct-body');
+  const open = !body.classList.contains('hidden');
+  body.classList.toggle('hidden', open);
+  document.getElementById('acct-chevron').textContent = open ? '▶' : '▼';
+});
+
+/* 質問の送信 */
+document.getElementById('question-send').addEventListener('click', () => {
+  const input = document.getElementById('question-input');
+  const v = input.value.trim();
+  if (!v) return showToast('質問を入力してください');
+  QUESTIONS.unshift({ at:'2026-08-21 15:40', body:v, answer:'', answeredAt:'' });
+  input.value = '';
+  render();
+  showToast('送信しました。Slackへ通知され、回答はメールとウカリア通知に届きます');
+});
+
+/* 画面切替 */
+function showTools(show) {
+  document.getElementById('view-onboarding').classList.toggle('hidden', show);
+  document.getElementById('view-tools').classList.toggle('hidden', !show);
+  document.getElementById('crumb').textContent = show ? 'サービス・ツールについて' : 'オンボーディング';
+  window.scrollTo(0,0);
+}
+document.getElementById('nav-tools').addEventListener('click', () => showTools(true));
+document.getElementById('back-to-onb').addEventListener('click', () => showTools(false));
+
+
+/* ============================================================
+   6. 100%達成の演出
+============================================================ */
+function celebrate() {
+  document.getElementById('celebrate').classList.remove('hidden');
+  runConfetti();
+}
+document.getElementById('celebrate-close').addEventListener('click', () => {
+  document.getElementById('celebrate').classList.add('hidden');
+  showToast('次回から通常のホーム画面が表示されます');
+  showTools(true);
+});
+
+function runConfetti() {
+  const cv = document.getElementById('confetti');
+  cv.classList.remove('hidden');
+  const ctx = cv.getContext('2d');
+  cv.width = innerWidth; cv.height = innerHeight;
+
+  const colors = ['#2E7DA1','#F3A12C','#2E9E6B','#B7DDED','#FFD166'];
+  const parts = Array.from({length:140}, () => ({
+    x: Math.random()*cv.width,
+    y: -20 - Math.random()*cv.height*0.5,
+    w: 6 + Math.random()*6,
+    h: 8 + Math.random()*8,
+    c: colors[(Math.random()*colors.length)|0],
+    vy: 2 + Math.random()*3,
+    vx: -1 + Math.random()*2,
+    rot: Math.random()*Math.PI,
+    vr: -0.1 + Math.random()*0.2,
+  }));
+
+  let frame = 0;
+  (function loop() {
+    ctx.clearRect(0,0,cv.width,cv.height);
+    parts.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      ctx.save();
+      ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+      ctx.fillStyle = p.c;
+      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+    });
+    frame++;
+    if (frame < 260) requestAnimationFrame(loop);
+    else { ctx.clearRect(0,0,cv.width,cv.height); cv.classList.add('hidden'); }
+  })();
+}
+
+
+/* ============================================================
+   7. 共通
+============================================================ */
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.add('hidden'), 2600);
+}
+
+render();
+</script>
+</body>
+</html>

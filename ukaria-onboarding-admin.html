@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ウカリア｜オンボーディング管理（管理者画面プロトタイプ）</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: {
+    uk:'#2E7DA1', ukdark:'#1F5A76', uksoft:'#E8F2F7', ukbg:'#F4F6F8',
+    line:'#E3E8ED', ink:'#1B2733', muted:'#6B7A88',
+    cta:'#F3A12C', done:'#2E9E6B', alert:'#D9534F',
+  },
+  fontFamily: { jp:['"Hiragino Kaku Gothic ProN"','"Yu Gothic"','"Noto Sans JP"','sans-serif'] },
+}}};
+</script>
+<style>
+  .cell-done{background:#2E7DA1;color:#fff}
+  .cell-open{background:#B7DDED;color:#1F5A76}
+  .cell-none{background:#F1F4F6;color:#C3CAD1}
+  button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible{outline:2px solid #F3A12C;outline-offset:2px}
+  input:focus, textarea:focus, select:focus{border-color:#2E7DA1 !important}
+  .scroll-thin::-webkit-scrollbar{width:6px;height:6px}
+  .scroll-thin::-webkit-scrollbar-thumb{background:#CBD5DD;border-radius:3px}
+</style>
+</head>
+<body class="font-jp bg-ukbg text-ink">
+
+<div class="flex min-h-screen">
+
+<!-- サイドバー（ウカリア管理者メニュー） -->
+<aside class="hidden md:flex md:flex-col w-[230px] shrink-0 bg-white border-r border-line">
+  <div class="px-5 py-4 flex items-center gap-2">
+    <div class="w-8 h-8 rounded-full bg-uk text-white flex items-center justify-center text-sm font-bold">ウ</div>
+    <span class="text-[19px] font-bold text-uk">ウカリア</span>
+  </div>
+  <nav class="flex-1 px-3 pb-4 text-[13px] overflow-y-auto scroll-thin">
+    <p class="px-2 pt-3 pb-1 text-[11px] text-muted">トップ</p>
+    <a class="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:bg-ukbg">🏠 ホーム</a>
+    <a class="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:bg-ukbg">🔔 お知らせ</a>
+    <p class="px-2 pt-4 pb-1 text-[11px] text-muted">ユーザー管理</p>
+    <a class="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:bg-ukbg">👥 コーチ</a>
+    <a class="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:bg-ukbg">👤 生徒管理</a>
+    <!-- ★今回追加 -->
+    <a class="flex items-center justify-between px-3 py-2 rounded-lg bg-uksoft text-uk font-bold">
+      <span class="flex items-center gap-2">🚩 オンボーディング管理</span>
+      <span class="bg-alert text-white text-[10px] px-1.5 py-0.5 rounded-full">3</span>
+    </a>
+    <a class="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:bg-ukbg">📈 アクティビティログ</a>
+    <p class="px-2 pt-4 pb-1 text-[11px] text-muted">コンテンツ</p>
+    <a class="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:bg-ukbg">📖 参考書</a>
+    <a class="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:bg-ukbg">📊 テスト分析</a>
+  </nav>
+  <div class="border-t border-line px-4 py-3">
+    <p class="text-[13px] font-bold">二川 真也</p>
+    <p class="text-[11px] text-muted mt-0.5">オーナー</p>
+  </div>
+</aside>
+
+<main class="flex-1 min-w-0">
+  <div class="px-5 md:px-8 pt-5 text-[12px] text-muted">
+    ホーム <span class="mx-1">›</span> <span class="text-ink">オンボーディング管理</span>
+  </div>
+
+  <div class="px-5 md:px-8 pt-3">
+    <h1 class="text-[20px] font-bold">オンボーディング管理</h1>
+    <p class="text-[12px] text-muted mt-1">新入塾生の初期セットアップ状況の確認と、コンテンツ管理を行います。</p>
+
+    <!-- タブ -->
+    <div class="mt-4 flex gap-1 border-b border-line overflow-x-auto scroll-thin">
+      <button data-tab="progress" class="tab px-4 py-2.5 text-[13px] font-bold whitespace-nowrap">進捗一覧</button>
+      <button data-tab="tasks"    class="tab px-4 py-2.5 text-[13px] font-bold whitespace-nowrap">タスク編集</button>
+      <button data-tab="accounts" class="tab px-4 py-2.5 text-[13px] font-bold whitespace-nowrap">アカウント情報管理</button>
+      <button data-tab="forms"    class="tab px-4 py-2.5 text-[13px] font-bold whitespace-nowrap">フォーム回答</button>
+      <button data-tab="questions" class="tab px-4 py-2.5 text-[13px] font-bold whitespace-nowrap">質問箱 <span class="ml-1 bg-alert text-white text-[10px] px-1.5 rounded-full">2</span></button>
+      <button data-tab="notify"   class="tab px-4 py-2.5 text-[13px] font-bold whitespace-nowrap">通知設定</button>
+    </div>
+  </div>
+
+  <div class="px-5 md:px-8 py-5 pb-16">
+
+    <!-- ============================================================
+         進捗一覧
+    ============================================================ -->
+    <section id="tab-progress">
+      <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <div class="bg-white rounded-xl border border-line p-4">
+          <p class="text-[11px] text-muted">対象生徒</p><p id="s-total" class="mt-1 text-2xl font-bold">-</p>
+        </div>
+        <div class="bg-white rounded-xl border border-line p-4">
+          <p class="text-[11px] text-muted">全完了</p><p id="s-complete" class="mt-1 text-2xl font-bold text-done">-</p>
+        </div>
+        <div class="bg-white rounded-xl border border-line p-4">
+          <p class="text-[11px] text-muted">未着手</p><p id="s-untouched" class="mt-1 text-2xl font-bold text-muted">-</p>
+        </div>
+        <div class="bg-white rounded-xl border border-alert p-4">
+          <p class="text-[11px] text-muted">要フォロー</p><p id="s-stalled" class="mt-1 text-2xl font-bold text-alert">-</p>
+          <p class="text-[10px] text-muted">3日以上停滞</p>
+        </div>
+        <div class="bg-white rounded-xl border border-cta p-4">
+          <p class="text-[11px] text-muted">期限超過あり</p><p id="s-overdue" class="mt-1 text-2xl font-bold text-cta">-</p>
+        </div>
+      </div>
+
+      <!-- 絞り込み -->
+      <div class="mt-5 bg-white rounded-xl border border-line p-4">
+        <div class="grid gap-3 md:grid-cols-4">
+          <div>
+            <label class="text-[11px] font-bold text-muted">生徒名 / 生徒コード</label>
+            <input id="f-keyword" type="text" placeholder="検索"
+                   class="mt-1 w-full h-10 px-3 rounded-lg border border-line text-[13px]">
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-muted">停止フェーズ</label>
+            <select id="f-phase" class="mt-1 w-full h-10 px-3 rounded-lg border border-line text-[13px] bg-white">
+              <option value="">すべて</option>
+              <option value="1">STEP1で停止</option>
+              <option value="2">STEP2で停止</option>
+              <option value="3">STEP3で停止</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-muted">停滞日数</label>
+            <select id="f-days" class="mt-1 w-full h-10 px-3 rounded-lg border border-line text-[13px] bg-white">
+              <option value="0">指定なし</option>
+              <option value="3">3日以上</option>
+              <option value="7">7日以上</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-muted">状態</label>
+            <select id="f-state" class="mt-1 w-full h-10 px-3 rounded-lg border border-line text-[13px] bg-white">
+              <option value="">すべて</option>
+              <option value="untouched">未着手</option>
+              <option value="active">進行中</option>
+              <option value="complete">完了済み</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-3 flex items-center justify-between">
+          <div class="flex items-center gap-3 text-[11px] text-muted">
+            <span class="flex items-center gap-1.5"><i class="w-4 h-4 rounded cell-done inline-block"></i>完了</span>
+            <span class="flex items-center gap-1.5"><i class="w-4 h-4 rounded cell-open inline-block"></i>開封のみ</span>
+            <span class="flex items-center gap-1.5"><i class="w-4 h-4 rounded cell-none inline-block"></i>未開封</span>
+          </div>
+          <div class="flex gap-2">
+            <button id="btn-clear" class="h-10 px-3 rounded-lg border border-line bg-white text-[12px] font-bold text-muted">クリア</button>
+            <button id="btn-csv" class="h-10 px-3 rounded-lg border border-uk text-uk bg-white text-[12px] font-bold">CSVで書き出し</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 bg-white rounded-xl border border-line overflow-x-auto scroll-thin">
+        <table class="w-full text-[12px]" style="border-collapse:collapse">
+          <thead>
+            <tr class="bg-ukbg text-left">
+              <th class="px-3 py-2.5 font-bold border-b border-line whitespace-nowrap">生徒</th>
+              <th class="px-3 py-2.5 font-bold border-b border-line whitespace-nowrap">入塾日</th>
+              <th class="px-3 py-2.5 font-bold border-b border-line whitespace-nowrap">進捗</th>
+              <th class="px-3 py-2.5 font-bold border-b border-line text-center whitespace-nowrap">STEP1</th>
+              <th class="px-3 py-2.5 font-bold border-b border-line text-center whitespace-nowrap">STEP2</th>
+              <th class="px-3 py-2.5 font-bold border-b border-line text-center whitespace-nowrap">STEP3</th>
+              <th class="px-3 py-2.5 font-bold border-b border-line whitespace-nowrap">停止中のタスク</th>
+              <th class="px-3 py-2.5 font-bold border-b border-line whitespace-nowrap">最終アクション</th>
+              <th class="px-3 py-2.5 font-bold border-b border-line whitespace-nowrap">操作</th>
+            </tr>
+          </thead>
+          <tbody id="progress-body"></tbody>
+        </table>
+      </div>
+      <p id="progress-empty" class="hidden mt-4 text-center text-[13px] text-muted">該当する生徒がいません</p>
+    </section>
+
+    <!-- ============================================================
+         タスク編集
+    ============================================================ -->
+    <section id="tab-tasks" class="hidden">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <p class="text-[12px] text-muted">保存すると生徒画面に即反映されます。task_id は自動発行のため変更できません。</p>
+        <button id="btn-add-task" class="h-10 px-4 rounded-lg bg-cta text-white text-[13px] font-bold">＋ タスクを追加</button>
+      </div>
+      <div id="task-editor" class="mt-4 space-y-3"></div>
+    </section>
+
+    <!-- ============================================================
+         アカウント情報管理
+    ============================================================ -->
+    <section id="tab-accounts" class="hidden">
+      <div class="bg-white rounded-xl border border-line p-4">
+        <h2 class="text-[14px] font-bold">外部ツールのアカウント情報</h2>
+        <p class="mt-1 text-[12px] text-muted">
+          ここに登録した情報が、生徒のオンボーディング画面に表示されます。パスワードは暗号化して保存し、操作履歴を記録します。
+        </p>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <select id="acc-student" class="h-10 px-3 rounded-lg border border-line text-[13px] bg-white"></select>
+          <button id="btn-add-acc" class="h-10 px-4 rounded-lg bg-uk text-white text-[13px] font-bold">＋ ツールを追加</button>
+          <button id="btn-bulk" class="h-10 px-4 rounded-lg border border-line bg-white text-[13px] font-bold text-muted">CSV一括登録</button>
+        </div>
+      </div>
+      <div id="account-editor" class="mt-4 space-y-3"></div>
+    </section>
+
+    <!-- ============================================================
+         フォーム回答
+    ============================================================ -->
+    <section id="tab-forms" class="hidden">
+      <div class="bg-white rounded-xl border border-line p-4">
+        <h2 class="text-[14px] font-bold">生徒が送信したフォームの回答</h2>
+        <p class="mt-1 text-[12px] text-muted">
+          回答はウカリアの生徒データへ直接保存されます。受講開始希望週の回答時は Google Chat に通知が飛びます。
+        </p>
+      </div>
+      <div class="mt-4 bg-white rounded-xl border border-line overflow-x-auto scroll-thin">
+        <table class="w-full text-[12px]" style="border-collapse:collapse">
+          <thead>
+            <tr class="bg-ukbg text-left">
+              <th class="px-3 py-2.5 font-bold border-b border-line">生徒</th>
+              <th class="px-3 py-2.5 font-bold border-b border-line">受講開始希望週</th>
+              <th class="px-3 py-2.5 font-bold border-b border-line">顔写真</th>
+              <th class="px-3 py-2.5 font-bold border-b border-line">送信日時</th>
+              <th class="px-3 py-2.5 font-bold border-b border-line">生徒データ反映</th>
+              <th class="px-3 py-2.5 font-bold border-b border-line">操作</th>
+            </tr>
+          </thead>
+          <tbody id="forms-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         質問箱
+    ============================================================ -->
+    <section id="tab-questions" class="hidden">
+      <div class="bg-white rounded-xl border border-line p-4">
+        <h2 class="text-[14px] font-bold">質問箱</h2>
+        <p class="mt-1 text-[12px] text-muted">
+          投稿があると Slack に通知されます。返信すると、生徒の登録メールとウカリアの通知に届きます。
+        </p>
+      </div>
+      <div id="question-admin" class="mt-4 space-y-3"></div>
+    </section>
+
+    <!-- ============================================================
+         通知設定
+    ============================================================ -->
+    <section id="tab-notify" class="hidden">
+      <div class="bg-white rounded-xl border border-line p-5 max-w-2xl">
+        <h2 class="text-[14px] font-bold">アラート・通知の設定</h2>
+        <p class="mt-1 text-[12px] text-muted">運営側の社内チャットへ自動通知します。</p>
+
+        <div class="mt-4 space-y-4">
+          <label class="flex items-start gap-3">
+            <input type="checkbox" checked class="mt-1">
+            <span>
+              <span class="text-[13px] font-bold">タスク停滞アラート</span>
+              <span class="block text-[12px] text-muted mt-0.5">
+                同じタスクで
+                <input type="number" value="3" class="w-14 h-8 px-2 mx-1 rounded border border-line text-[12px] text-center">
+                日以上停止している生徒を検知して通知
+              </span>
+            </span>
+          </label>
+
+          <label class="flex items-start gap-3">
+            <input type="checkbox" checked class="mt-1">
+            <span>
+              <span class="text-[13px] font-bold">期限超過アラート</span>
+              <span class="block text-[12px] text-muted mt-0.5">個別期限を過ぎた未完了タスクがある生徒を毎朝9時に通知</span>
+            </span>
+          </label>
+
+          <label class="flex items-start gap-3">
+            <input type="checkbox" checked class="mt-1">
+            <span>
+              <span class="text-[13px] font-bold">質問箱への投稿</span>
+              <span class="block text-[12px] text-muted mt-0.5">投稿があった時点でリアルタイム通知</span>
+            </span>
+          </label>
+
+          <label class="flex items-start gap-3">
+            <input type="checkbox" checked class="mt-1">
+            <span>
+              <span class="text-[13px] font-bold">受講開始希望週の回答</span>
+              <span class="block text-[12px] text-muted mt-0.5">回答があった時点で Google Chat に通知</span>
+            </span>
+          </label>
+
+          <label class="flex items-start gap-3">
+            <input type="checkbox" class="mt-1">
+            <span>
+              <span class="text-[13px] font-bold">オンボーディング完了</span>
+              <span class="block text-[12px] text-muted mt-0.5">100%完了した生徒を通知</span>
+            </span>
+          </label>
+        </div>
+
+        <div class="mt-5 border-t border-line pt-4">
+          <label class="text-[11px] font-bold text-muted">Slack Webhook URL</label>
+          <input type="text" value="https://hooks.slack.com/services/xxxx/xxxx"
+                 class="mt-1 w-full h-10 px-3 rounded-lg border border-line text-[12px] font-mono">
+          <label class="mt-3 block text-[11px] font-bold text-muted">Google Chat Webhook URL</label>
+          <input type="text" value="https://chat.googleapis.com/v1/spaces/xxxx"
+                 class="mt-1 w-full h-10 px-3 rounded-lg border border-line text-[12px] font-mono">
+          <div class="mt-4 flex gap-2">
+            <button class="h-10 px-5 rounded-lg bg-uk text-white text-[13px] font-bold">保存</button>
+            <button id="btn-test" class="h-10 px-5 rounded-lg border border-line bg-white text-[13px] font-bold text-muted">テスト送信</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+</div>
+
+<!-- 生徒詳細ドロワー -->
+<div id="drawer" class="hidden fixed inset-0 z-50">
+  <div id="drawer-bg" class="absolute inset-0 bg-black/30"></div>
+  <div class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl overflow-y-auto scroll-thin">
+    <div class="sticky top-0 bg-white border-b border-line px-5 py-4 flex items-center justify-between">
+      <div>
+        <h3 id="dw-name" class="text-[16px] font-bold"></h3>
+        <p id="dw-sub" class="text-[11px] text-muted mt-0.5"></p>
+      </div>
+      <button id="drawer-close" class="text-muted text-[18px]">×</button>
+    </div>
+    <div id="drawer-body" class="p-5 space-y-4"></div>
+  </div>
+</div>
+
+<div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[95] px-4 py-2.5 rounded-lg bg-ink text-white text-[13px] font-bold"></div>
+
+
+<script>
+/* ============================================================
+   ダミーデータ
+============================================================ */
+const TODAY = new Date('2026-08-21');
+
+const PHASES = [
+  { id:'P1', no:1, title:'ようこそ！まずは準備を始めましょう' },
+  { id:'P2', no:2, title:'ツールのセットアップと使い方' },
+  { id:'P3', no:3, title:'学習のスタート！' },
+];
+
+let TASKS = [
+  { taskId:'TSK_week',   phase:'P1', order:1, title:'受講開始希望週を教えてください', minutes:2,  dueDays:3,  type:'form_week',  video:'', manual:'', hint:'あとから変更できます', body:'いつから授業を始めたいかを選んでください。', published:true },
+  { taskId:'TSK_photo',  phase:'P1', order:2, title:'プロフィール用の顔写真をアップロード', minutes:3, dueDays:3, type:'form_photo', video:'', manual:'', hint:'背景は問いません', body:'コーチが顔と名前を一致させるために使います。', published:true },
+  { taskId:'TSK_app',    phase:'P2', order:3, title:'学習アプリのインストールと初期設定', minutes:5, dueDays:5, type:'normal', video:'https://www.youtube-nocookie.com/embed/xxxx', manual:'ラクモン設定マニュアル.pdf', hint:'通知はオンにしておくと課題の締切を逃しません', body:'ラクモンをインストールし、アカウント情報でログインします。', published:true },
+  { taskId:'TSK_rules',  phase:'P2', order:4, title:'塾のルールの確認と同意', minutes:3, dueDays:7, type:'normal', video:'', manual:'受講規約_2026年度.pdf', hint:'全4ページ・読むだけ', body:'欠席連絡、質問チャットの使い方、成績データの取り扱いを確認します。', published:true },
+  { taskId:'TSK_test',   phase:'P3', order:5, title:'入塾テストの受験', minutes:60, dueDays:10, type:'normal', video:'https://www.youtube-nocookie.com/embed/yyyy', manual:'', hint:'静かな場所で60分まとめて', body:'現時点の学力を測ります。', published:true },
+  { taskId:'TSK_orient', phase:'P3', order:6, title:'初回オリエンテーションの申し込み', minutes:5, dueDays:10, type:'normal', video:'', manual:'', hint:'今週中の枠がおすすめ', body:'担当コーチとの30分の面談枠を予約します。', published:true },
+];
+
+/* 生徒と進捗（done: 完了済みtaskId / opened: 開封のみ） */
+let STUDENTS = [
+  { id:'S1', name:'形部 深優',   code:'ST-A7K92', grade:'高3', enrolled:'2026-08-18',
+    done:['TSK_week','TSK_photo','TSK_app'], opened:['TSK_rules'], last:'2026-08-21 09:12' },
+  { id:'S2', name:'南雲 大芽',   code:'ST-B3M18', grade:'高2', enrolled:'2026-08-10',
+    done:['TSK_week'], opened:['TSK_photo'], last:'2026-08-12 21:03' },
+  { id:'S3', name:'宍戸 好誠',   code:'ST-C9P44', grade:'高3', enrolled:'2026-08-05',
+    done:[], opened:[], last:null },
+  { id:'S4', name:'小笠原 寧々', code:'ST-D2R07', grade:'高1', enrolled:'2026-08-01',
+    done:['TSK_week','TSK_photo','TSK_app','TSK_rules','TSK_test','TSK_orient'], opened:[], last:'2026-08-14 18:40' },
+  { id:'S5', name:'武井 明飛',   code:'ST-E6T51', grade:'高3', enrolled:'2026-08-14',
+    done:['TSK_week','TSK_photo','TSK_app','TSK_rules'], opened:['TSK_test'], last:'2026-08-20 22:10' },
+];
+
+let ACCOUNTS = {
+  S1: [
+    { tool:'ラクモン',     loginId:'rakumon_8842', password:'Gk7#pQz2',  url:'https://rakumon.example.com', note:'質問用アプリ' },
+    { tool:'塾生サイト',   loginId:'ST-A7K92',     password:'haru0514',  url:'https://members.example.com', note:'教材ダウンロード' },
+  ],
+  S2: [ { tool:'ラクモン', loginId:'rakumon_9107', password:'Tt4$mNb8', url:'https://rakumon.example.com', note:'質問用アプリ' } ],
+  S3: [], S4: [], S5: [],
+};
+
+let FORMS = [
+  { sid:'S1', week:'9/1の週',  photo:'IMG_2481.jpg', at:'2026-08-19 20:31', synced:true },
+  { sid:'S2', week:'8/25の週', photo:'—',            at:'2026-08-11 08:02', synced:true },
+  { sid:'S5', week:'9/8の週',  photo:'photo_takei.png', at:'2026-08-15 12:45', synced:false },
+];
+
+let QUESTIONS = [
+  { id:'Q1', sid:'S2', at:'2026-08-20 21:40', body:'ラクモンにログインできません。IDは合っているはずなのですが…', answer:'', answeredAt:'' },
+  { id:'Q2', sid:'S3', at:'2026-08-19 17:05', body:'入塾テストはいつまでに受ければよいですか？', answer:'', answeredAt:'' },
+  { id:'Q3', sid:'S1', at:'2026-08-18 10:22', body:'顔写真は制服でなくても大丈夫ですか？', answer:'私服で問題ありません。', answeredAt:'2026-08-18 11:05' },
+];
+
+
+/* ============================================================
+   集計
+============================================================ */
+function pubTasks() { return TASKS.filter(t => t.published).sort((a,b) => a.order - b.order); }
+
+function dueDateOf(student, task) {
+  const d = new Date(student.enrolled);
+  d.setDate(d.getDate() + task.dueDays);
+  return d;
+}
+
+function summarize(s) {
+  const list = pubTasks();
+  const done = list.filter(t => s.done.includes(t.taskId)).length;
+  const pct  = list.length ? Math.round(done / list.length * 100) : 0;
+  const idle = s.last ? Math.floor((TODAY - new Date(s.last.replace(' ','T'))) / 86400000) : null;
+
+  const stuck = list.find(t => !s.done.includes(t.taskId)) || null;
+  const phaseNo = stuck ? PHASES.find(p => p.id === stuck.phase).no : null;
+  const overdue = list.filter(t => !s.done.includes(t.taskId) && dueDateOf(s, t) < TODAY).length;
+
+  let state = 'active';
+  if (pct === 100) state = 'complete';
+  else if (!s.last) state = 'untouched';
+
+  /* フェーズごとのセル状態 */
+  const cells = PHASES.map(p => {
+    const items = list.filter(t => t.phase === p.id);
+    const d = items.filter(t => s.done.includes(t.taskId)).length;
+    const o = items.filter(t => s.opened.includes(t.taskId)).length;
+    if (items.length && d === items.length) return 'done';
+    if (d > 0 || o > 0) return 'open';
+    return 'none';
+  });
+
+  return { done, total:list.length, pct, idle, stuck, phaseNo, overdue, state, cells };
+}
+
+
+/* ============================================================
+   タブ切替
+============================================================ */
+const TABS = ['progress','tasks','accounts','forms','questions','notify'];
+function switchTab(tab) {
+  TABS.forEach(t => document.getElementById('tab-'+t).classList.toggle('hidden', t !== tab));
+  document.querySelectorAll('.tab').forEach(b => {
+    const on = b.dataset.tab === tab;
+    b.style.borderBottom = on ? '2px solid #2E7DA1' : '2px solid transparent';
+    b.style.color = on ? '#2E7DA1' : '#6B7A88';
+  });
+}
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+
+/* ============================================================
+   進捗一覧
+============================================================ */
+function renderProgress() {
+  const kw    = document.getElementById('f-keyword').value.trim().toLowerCase();
+  const phase = document.getElementById('f-phase').value;
+  const days  = Number(document.getElementById('f-days').value);
+  const state = document.getElementById('f-state').value;
+
+  const rows = STUDENTS.map(s => ({ s, m: summarize(s) })).filter(({s, m}) => {
+    if (kw && !(s.name.toLowerCase().includes(kw) || s.code.toLowerCase().includes(kw))) return false;
+    if (phase && String(m.phaseNo) !== phase) return false;
+    if (days && !(m.idle !== null && m.idle >= days) && !(m.idle === null && days > 0)) return false;
+    if (state && m.state !== state) return false;
+    return true;
+  });
+
+  document.getElementById('progress-body').innerHTML = rows.map(({s, m}) => {
+    const cells = m.cells.map(c => {
+      const cls = c === 'done' ? 'cell-done' : c === 'open' ? 'cell-open' : 'cell-none';
+      const mk  = c === 'done' ? '✓' : c === 'open' ? '…' : '−';
+      return `<td class="px-3 py-2 text-center"><span class="${cls} inline-flex items-center justify-center w-7 h-7 rounded font-bold">${mk}</span></td>`;
+    }).join('');
+
+    const lastLabel =
+      m.state === 'complete'  ? '<span class="text-done font-bold">完了</span>' :
+      m.state === 'untouched' ? '<span class="text-muted">未着手</span>' :
+      m.idle >= 3             ? `<span class="text-alert font-bold">${m.idle}日停滞</span>` :
+                                `<span class="text-muted">${m.idle}日前</span>`;
+
+    return `<tr class="border-b border-line hover:bg-ukbg/60">
+      <td class="px-3 py-2 whitespace-nowrap">
+        <p class="font-bold">${esc(s.name)}</p>
+        <p class="text-[11px] text-muted font-mono">${esc(s.code)}・${esc(s.grade)}</p>
+      </td>
+      <td class="px-3 py-2 whitespace-nowrap text-muted">${esc(s.enrolled)}</td>
+      <td class="px-3 py-2 whitespace-nowrap">
+        <div class="flex items-center gap-2">
+          <div class="w-16 h-2 rounded-full bg-ukbg overflow-hidden">
+            <div class="h-full rounded-full ${m.pct===100?'bg-done':'bg-uk'}" style="width:${m.pct}%"></div>
+          </div>
+          <span class="font-mono text-[11px]">${m.done}/${m.total}</span>
+        </div>
+      </td>
+      ${cells}
+      <td class="px-3 py-2 whitespace-nowrap">
+        ${m.stuck ? `<span class="text-[11px]">STEP${m.phaseNo}・${esc(m.stuck.title)}</span>` : '<span class="text-muted">—</span>'}
+        ${m.overdue ? `<span class="ml-1 text-[10px] bg-cta text-white rounded px-1.5 py-0.5">期限超過${m.overdue}</span>` : ''}
+      </td>
+      <td class="px-3 py-2 whitespace-nowrap">${lastLabel}</td>
+      <td class="px-3 py-2 whitespace-nowrap">
+        <button data-open="${s.id}" class="open-dw h-8 px-2.5 rounded border border-uk text-uk text-[11px] font-bold">詳細</button>
+        <button data-ping="${s.id}" class="ping h-8 px-2.5 rounded border border-line text-muted text-[11px] font-bold">催促</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('progress-empty').classList.toggle('hidden', rows.length > 0);
+
+  const all = STUDENTS.map(summarize);
+  document.getElementById('s-total').textContent     = STUDENTS.length;
+  document.getElementById('s-complete').textContent  = all.filter(m => m.state==='complete').length;
+  document.getElementById('s-untouched').textContent = all.filter(m => m.state==='untouched').length;
+  document.getElementById('s-stalled').textContent   = all.filter(m => m.idle !== null && m.idle >= 3 && m.state!=='complete').length;
+  document.getElementById('s-overdue').textContent   = all.filter(m => m.overdue > 0).length;
+
+  document.querySelectorAll('.open-dw').forEach(b => b.addEventListener('click', () => openDrawer(b.dataset.open)));
+  document.querySelectorAll('.ping').forEach(b => b.addEventListener('click', () => {
+    const s = STUDENTS.find(x => x.id === b.dataset.ping);
+    showToast(esc(s.name) + ' さんに催促通知を送信しました');
+  }));
+}
+
+['f-keyword','f-phase','f-days','f-state'].forEach(id =>
+  document.getElementById(id).addEventListener('input', renderProgress));
+document.getElementById('btn-clear').addEventListener('click', () => {
+  ['f-keyword','f-phase','f-days','f-state'].forEach(id => document.getElementById(id).value = id==='f-days' ? '0' : '');
+  renderProgress();
+});
+document.getElementById('btn-csv').addEventListener('click', () => {
+  const list = pubTasks();
+  const head = ['生徒名','生徒コード','学年','入塾日','完了数','合計','進捗率','状態','最終アクション',...list.map(t=>t.title)];
+  const lines = STUDENTS.map(s => {
+    const m = summarize(s);
+    return [s.name, s.code, s.grade, s.enrolled, m.done, m.total, m.pct+'%', m.state, s.last||'',
+            ...list.map(t => s.done.includes(t.taskId) ? '完了' : s.opened.includes(t.taskId) ? '開封のみ' : '未開封')];
+  });
+  const csv = [head, ...lines].map(r => r.map(v => '"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'}));
+  a.download = 'onboarding_progress_2026-08-21.csv';
+  a.click();
+  showToast('CSVをダウンロードしました');
+});
+
+
+/* ============================================================
+   生徒詳細ドロワー
+============================================================ */
+function openDrawer(sid) {
+  const s = STUDENTS.find(x => x.id === sid);
+  const m = summarize(s);
+  const form = FORMS.find(f => f.sid === sid);
+
+  document.getElementById('dw-name').textContent = s.name;
+  document.getElementById('dw-sub').textContent = `${s.code}・${s.grade}・入塾 ${s.enrolled}`;
+
+  document.getElementById('drawer-body').innerHTML = `
+    <div class="rounded-lg bg-ukbg p-3">
+      <div class="flex items-center justify-between text-[12px]">
+        <span class="text-muted">進捗</span>
+        <span class="font-bold">${m.done}/${m.total}（${m.pct}%）</span>
+      </div>
+      <div class="mt-2 h-2 rounded-full bg-white overflow-hidden">
+        <div class="h-full ${m.pct===100?'bg-done':'bg-uk'}" style="width:${m.pct}%"></div>
+      </div>
+    </div>
+
+    <div>
+      <p class="text-[12px] font-bold mb-2">タスクの状況</p>
+      <ul class="space-y-1.5">
+        ${pubTasks().map(t => {
+          const done = s.done.includes(t.taskId);
+          const opened = s.opened.includes(t.taskId);
+          const over = !done && dueDateOf(s, t) < TODAY;
+          const d = dueDateOf(s, t);
+          return `<li class="flex items-center gap-2 text-[12px] border border-line rounded-lg px-3 py-2">
+            <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold
+              ${done?'bg-done text-white':opened?'bg-uksoft text-uk':'bg-ukbg text-muted'}">${done?'✓':opened?'…':'−'}</span>
+            <span class="flex-1 ${done?'text-muted line-through':''}">${esc(t.title)}</span>
+            <span class="${over?'text-alert font-bold':'text-muted'} text-[11px]">${(d.getMonth()+1)}/${d.getDate()}</span>
+          </li>`;
+        }).join('')}
+      </ul>
+    </div>
+
+    <div>
+      <p class="text-[12px] font-bold mb-2">フォーム回答</p>
+      ${form ? `
+        <div class="border border-line rounded-lg p-3 text-[12px] space-y-1">
+          <p>受講開始希望週：<b>${esc(form.week)}</b></p>
+          <p>顔写真：<b>${esc(form.photo)}</b></p>
+          <p class="text-muted text-[11px]">送信 ${esc(form.at)}／生徒データ反映 ${form.synced?'済':'未'}</p>
+        </div>` : '<p class="text-[12px] text-muted">未回答</p>'}
+    </div>
+
+    <div>
+      <p class="text-[12px] font-bold mb-2">アカウント情報（${(ACCOUNTS[sid]||[]).length}件）</p>
+      ${(ACCOUNTS[sid]||[]).map(a => `
+        <div class="border border-line rounded-lg p-3 text-[12px] mb-2">
+          <p class="font-bold">${esc(a.tool)}</p>
+          <p class="font-mono text-muted mt-0.5">${esc(a.loginId)} / ••••••••</p>
+        </div>`).join('') || '<p class="text-[12px] text-alert">未登録。生徒画面に何も表示されません</p>'}
+    </div>
+
+    <div class="flex gap-2 pt-2">
+      <button class="flex-1 h-11 rounded-lg bg-uk text-white text-[13px] font-bold">催促を送る</button>
+      <button class="flex-1 h-11 rounded-lg border border-line text-[13px] font-bold text-muted">生徒詳細ページへ</button>
+    </div>`;
+
+  document.getElementById('drawer').classList.remove('hidden');
+}
+document.getElementById('drawer-close').addEventListener('click', () => document.getElementById('drawer').classList.add('hidden'));
+document.getElementById('drawer-bg').addEventListener('click', () => document.getElementById('drawer').classList.add('hidden'));
+
+
+/* ============================================================
+   タスク編集
+============================================================ */
+function renderTasks() {
+  document.getElementById('task-editor').innerHTML = TASKS.sort((a,b)=>a.order-b.order).map((t, idx) => `
+    <div class="bg-white rounded-xl border border-line p-4" data-task="${esc(t.taskId)}">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-[11px] font-mono text-uk">${esc(t.taskId)}</span>
+        <span class="text-[10px] text-muted">自動発行・変更不可</span>
+      </div>
+
+      <div class="grid gap-3 md:grid-cols-12">
+        <div class="md:col-span-2">
+          <label class="text-[11px] font-bold text-muted">STEP</label>
+          <select data-f="phase" class="mt-1 w-full h-10 px-2 rounded-lg border border-line text-[13px] bg-white">
+            ${PHASES.map(p=>`<option value="${p.id}" ${t.phase===p.id?'selected':''}>STEP${p.no}</option>`).join('')}
+          </select>
+        </div>
+        <div class="md:col-span-1">
+          <label class="text-[11px] font-bold text-muted">順番</label>
+          <input data-f="order" type="number" value="${t.order}" class="mt-1 w-full h-10 px-2 rounded-lg border border-line text-[13px]">
+        </div>
+        <div class="md:col-span-6">
+          <label class="text-[11px] font-bold text-muted">タイトル</label>
+          <input data-f="title" type="text" value="${esc(t.title)}" class="mt-1 w-full h-10 px-3 rounded-lg border border-line text-[13px]">
+        </div>
+        <div class="md:col-span-1">
+          <label class="text-[11px] font-bold text-muted">目安分</label>
+          <input data-f="minutes" type="number" value="${t.minutes}" class="mt-1 w-full h-10 px-2 rounded-lg border border-line text-[13px]">
+        </div>
+        <div class="md:col-span-2">
+          <label class="text-[11px] font-bold text-muted">期限（入塾+日）</label>
+          <input data-f="dueDays" type="number" value="${t.dueDays}" class="mt-1 w-full h-10 px-2 rounded-lg border border-line text-[13px]">
+        </div>
+      </div>
+
+      <label class="block mt-3 text-[11px] font-bold text-muted">説明文</label>
+      <textarea data-f="body" rows="2" class="mt-1 w-full px-3 py-2 rounded-lg border border-line text-[13px] leading-relaxed">${esc(t.body)}</textarea>
+
+      <div class="grid gap-3 md:grid-cols-2 mt-3">
+        <div>
+          <label class="text-[11px] font-bold text-muted">動画URL（YouTube埋め込み）</label>
+          <input data-f="video" type="text" value="${esc(t.video)}" placeholder="https://www.youtube-nocookie.com/embed/..."
+                 class="mt-1 w-full h-10 px-3 rounded-lg border border-line text-[12px] font-mono">
+        </div>
+        <div>
+          <label class="text-[11px] font-bold text-muted">マニュアル（PDFのリンク）</label>
+          <input data-f="manual" type="text" value="${esc(t.manual)}" placeholder="ファイル名またはURL"
+                 class="mt-1 w-full h-10 px-3 rounded-lg border border-line text-[12px]">
+        </div>
+      </div>
+
+      <div class="grid gap-3 md:grid-cols-2 mt-3">
+        <div>
+          <label class="text-[11px] font-bold text-muted">補足の一言（Tips）</label>
+          <input data-f="hint" type="text" value="${esc(t.hint)}" class="mt-1 w-full h-10 px-3 rounded-lg border border-line text-[13px]">
+        </div>
+        <div>
+          <label class="text-[11px] font-bold text-muted">入力フォーム</label>
+          <select data-f="type" class="mt-1 w-full h-10 px-3 rounded-lg border border-line text-[13px] bg-white">
+            <option value="normal"     ${t.type==='normal'?'selected':''}>なし</option>
+            <option value="form_week"  ${t.type==='form_week'?'selected':''}>受講開始希望週の選択</option>
+            <option value="form_photo" ${t.type==='form_photo'?'selected':''}>顔写真のアップロード</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-3 flex items-center justify-between">
+        <label class="flex items-center gap-2 text-[12px]">
+          <input data-f="published" type="checkbox" ${t.published?'checked':''} class="w-4 h-4"> 生徒に表示する
+        </label>
+        <div class="flex items-center gap-3">
+          <span class="text-[11px] text-muted">完了 ${STUDENTS.filter(s=>s.done.includes(t.taskId)).length}名</span>
+          <button class="save-task h-10 px-5 rounded-lg bg-uk text-white text-[13px] font-bold">保存</button>
+        </div>
+      </div>
+    </div>`).join('');
+
+  document.querySelectorAll('.save-task').forEach(btn => btn.addEventListener('click', () => {
+    const box = btn.closest('[data-task]');
+    const t = TASKS.find(x => x.taskId === box.dataset.task);
+    box.querySelectorAll('[data-f]').forEach(el => {
+      const f = el.dataset.f;
+      t[f] = f === 'published' ? el.checked
+           : ['order','minutes','dueDays'].includes(f) ? Number(el.value)
+           : el.value;
+    });
+    renderTasks(); renderProgress();
+    showToast('保存しました。生徒画面に反映されます');
+  }));
+}
+
+document.getElementById('btn-add-task').addEventListener('click', () => {
+  TASKS.push({
+    taskId:'TSK_' + Math.random().toString(16).slice(2,8),
+    phase:'P1', order:TASKS.length+1, title:'新しいタスク', minutes:5, dueDays:7,
+    type:'normal', video:'', manual:'', hint:'', body:'説明文を入力してください。', published:false,
+  });
+  renderTasks();
+  showToast('追加しました（非公開の状態です）');
+});
+
+
+/* ============================================================
+   アカウント情報管理
+============================================================ */
+function renderAccounts() {
+  const sel = document.getElementById('acc-student');
+  if (!sel.dataset.init) {
+    sel.innerHTML = STUDENTS.map(s => `<option value="${s.id}">${esc(s.name)}（${esc(s.code)}）</option>`).join('');
+    sel.dataset.init = '1';
+    sel.addEventListener('change', renderAccounts);
+  }
+  const sid = sel.value || 'S1';
+  const list = ACCOUNTS[sid] || [];
+
+  document.getElementById('account-editor').innerHTML = list.length ? list.map((a, i) => `
+    <div class="bg-white rounded-xl border border-line p-4" data-acc="${i}">
+      <div class="grid gap-3 md:grid-cols-4">
+        <div>
+          <label class="text-[11px] font-bold text-muted">ツール名</label>
+          <input data-af="tool" value="${esc(a.tool)}" class="mt-1 w-full h-10 px-3 rounded-lg border border-line text-[13px]">
+        </div>
+        <div>
+          <label class="text-[11px] font-bold text-muted">ログインID</label>
+          <input data-af="loginId" value="${esc(a.loginId)}" class="mt-1 w-full h-10 px-3 rounded-lg border border-line text-[13px] font-mono">
+        </div>
+        <div>
+          <label class="text-[11px] font-bold text-muted">パスワード</label>
+          <input data-af="password" value="${esc(a.password)}" class="mt-1 w-full h-10 px-3 rounded-lg border border-line text-[13px] font-mono">
+        </div>
+        <div>
+          <label class="text-[11px] font-bold text-muted">ログインURL</label>
+          <input data-af="url" value="${esc(a.url)}" class="mt-1 w-full h-10 px-3 rounded-lg border border-line text-[12px] font-mono">
+        </div>
+      </div>
+      <div class="mt-3 flex items-end gap-3">
+        <div class="flex-1">
+          <label class="text-[11px] font-bold text-muted">補足</label>
+          <input data-af="note" value="${esc(a.note)}" class="mt-1 w-full h-10 px-3 rounded-lg border border-line text-[13px]">
+        </div>
+        <button class="save-acc h-10 px-5 rounded-lg bg-uk text-white text-[13px] font-bold">保存</button>
+        <button class="del-acc h-10 px-4 rounded-lg border border-line text-alert text-[13px] font-bold">削除</button>
+      </div>
+    </div>`).join('')
+    : '<div class="bg-white rounded-xl border border-line p-6 text-center text-[13px] text-muted">まだ登録がありません。「＋ ツールを追加」から登録してください。</div>';
+
+  document.querySelectorAll('.save-acc').forEach(b => b.addEventListener('click', () => {
+    const box = b.closest('[data-acc]');
+    const a = ACCOUNTS[sid][Number(box.dataset.acc)];
+    box.querySelectorAll('[data-af]').forEach(el => a[el.dataset.af] = el.value);
+    showToast('保存しました（パスワードは暗号化して保存されます）');
+  }));
+  document.querySelectorAll('.del-acc').forEach(b => b.addEventListener('click', () => {
+    ACCOUNTS[sid].splice(Number(b.closest('[data-acc]').dataset.acc), 1);
+    renderAccounts(); showToast('削除しました');
+  }));
+}
+document.getElementById('btn-add-acc').addEventListener('click', () => {
+  const sid = document.getElementById('acc-student').value || 'S1';
+  (ACCOUNTS[sid] = ACCOUNTS[sid] || []).push({ tool:'', loginId:'', password:'', url:'', note:'' });
+  renderAccounts();
+});
+document.getElementById('btn-bulk').addEventListener('click', () =>
+  showToast('CSVをアップロードして一括登録します（本番実装）'));
+
+
+/* ============================================================
+   フォーム回答
+============================================================ */
+function renderForms() {
+  document.getElementById('forms-body').innerHTML = FORMS.map(f => {
+    const s = STUDENTS.find(x => x.id === f.sid);
+    return `<tr class="border-b border-line">
+      <td class="px-3 py-2.5 whitespace-nowrap">
+        <p class="font-bold">${esc(s.name)}</p>
+        <p class="text-[11px] text-muted font-mono">${esc(s.code)}</p>
+      </td>
+      <td class="px-3 py-2.5 whitespace-nowrap"><b>${esc(f.week)}</b></td>
+      <td class="px-3 py-2.5 whitespace-nowrap">${esc(f.photo)}</td>
+      <td class="px-3 py-2.5 whitespace-nowrap text-muted">${esc(f.at)}</td>
+      <td class="px-3 py-2.5 whitespace-nowrap">
+        ${f.synced
+          ? '<span class="bg-uksoft text-uk rounded px-2 py-0.5 text-[11px] font-bold">反映済み</span>'
+          : '<span class="bg-[#FDF1E6] text-[#8A5A00] rounded px-2 py-0.5 text-[11px] font-bold">未反映</span>'}
+      </td>
+      <td class="px-3 py-2.5 whitespace-nowrap">
+        <button data-open="${f.sid}" class="open-dw h-8 px-2.5 rounded border border-uk text-uk text-[11px] font-bold">詳細</button>
+      </td>
+    </tr>`;
+  }).join('');
+  document.querySelectorAll('#forms-body .open-dw').forEach(b =>
+    b.addEventListener('click', () => openDrawer(b.dataset.open)));
+}
+
+
+/* ============================================================
+   質問箱
+============================================================ */
+function renderQuestions() {
+  document.getElementById('question-admin').innerHTML = QUESTIONS.map(q => {
+    const s = STUDENTS.find(x => x.id === q.sid);
+    return `<div class="bg-white rounded-xl border ${q.answer?'border-line':'border-alert'} p-4" data-q="${q.id}">
+      <div class="flex items-center gap-2">
+        ${q.answer ? '' : '<span class="bg-alert text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">未回答</span>'}
+        <span class="text-[13px] font-bold">${esc(s.name)}</span>
+        <span class="text-[11px] text-muted font-mono">${esc(s.code)}</span>
+        <span class="ml-auto text-[11px] text-muted">${esc(q.at)}</span>
+      </div>
+      <p class="mt-2 text-[13px]">${esc(q.body)}</p>
+      ${q.answer ? `
+        <div class="mt-3 rounded-lg bg-uksoft px-3 py-2">
+          <p class="text-[11px] text-uk font-bold">回答済み（${esc(q.answeredAt)}）</p>
+          <p class="mt-1 text-[13px]">${esc(q.answer)}</p>
+        </div>`
+      : `
+        <textarea data-ans rows="2" placeholder="回答を入力（送信すると生徒のメールとウカリア通知に届きます）"
+                  class="mt-3 w-full px-3 py-2 rounded-lg border border-line text-[13px]"></textarea>
+        <div class="mt-2 flex justify-end">
+          <button class="send-ans h-10 px-5 rounded-lg bg-uk text-white text-[13px] font-bold">返信する</button>
+        </div>`}
+    </div>`;
+  }).join('');
+
+  document.querySelectorAll('.send-ans').forEach(b => b.addEventListener('click', () => {
+    const box = b.closest('[data-q]');
+    const q = QUESTIONS.find(x => x.id === box.dataset.q);
+    const v = box.querySelector('[data-ans]').value.trim();
+    if (!v) return showToast('回答を入力してください');
+    q.answer = v; q.answeredAt = '2026-08-21 15:50';
+    renderQuestions();
+    showToast('返信しました。生徒のメールとウカリア通知に送信されます');
+  }));
+}
+
+document.getElementById('btn-test').addEventListener('click', () => showToast('テスト通知を送信しました'));
+
+
+/* ============================================================
+   共通
+============================================================ */
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.add('hidden'), 2600);
+}
+
+switchTab('progress');
+renderProgress();
+renderTasks();
+renderAccounts();
+renderForms();
+renderQuestions();
+</script>
+</body>
+</html>
